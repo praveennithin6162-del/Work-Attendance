@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Attendance</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f4f7;
+    color: #222;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    margin-bottom: 15px;
+    border-radius: 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input, textarea, button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.status-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.status-buttons button {
+    cursor: pointer;
+}
+
+.present { background: #d4edda; }
+.absent { background: #f8d7da; }
+.leave { background: #fff3cd; }
+.half { background: #d1ecf1; }
+
+.selected {
+    border: 3px solid #333;
+}
+
+.save-btn {
+    margin-top: 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.record {
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.record button {
+    width: auto;
+    padding: 7px 12px;
+    margin-top: 8px;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+}
+
+.edit-btn {
+    background: #ffc107;
+    border: none;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.summary div {
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    background: #eee;
+}
+
+.big {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.dark {
+    background: #181818;
+    color: white;
+}
+
+.dark .card {
+    background: #242424;
+}
+
+.dark input,
+.dark textarea {
+    background: #333;
+    color: white;
+    border-color: #555;
+}
+
+.dark .record {
+    border-color: #555;
+}
+
+.toggle {
+    background: #333;
+    color: white;
+    border: none;
+    margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>💼 Work Attendance</h1>
+
+<button class="toggle" onclick="toggleDarkMode()">
+🌙 Dark Mode
+</button>
+
+<div class="card">
+
+<h2>Mark Attendance</h2>
+
+<label>Date</label>
+<input type="date" id="date">
+
+<label>Status</label>
+
+<div class="status-buttons">
+
+<button class="present" onclick="selectStatus('Present', this)">
+✅ Present
+</button>
+
+<button class="absent" onclick="selectStatus('Absent', this)">
+❌ Absent
+</button>
+
+<button class="leave" onclick="selectStatus('Leave', this)">
+🏖️ Leave
+</button>
+
+<button class="half" onclick="selectStatus('Half Day', this)">
+🌓 Half Day
+</button>
+
+</div>
+
+<label>Check In</label>
+<input type="time" id="checkIn">
+
+<label>Check Out</label>
+<input type="time" id="checkOut">
+
+<label>Notes</label>
+<textarea id="notes" rows="3"
+placeholder="Optional notes..."></textarea>
+
+<button class="save-btn" onclick="saveAttendance()">
+💾 Save Attendance
+</button>
+
+</div>
+
+
+<div class="card">
+
+<h2>📊 Summary</h2>
+
+<div class="summary">
+
+<div>
+<div class="big" id="presentCount">0</div>
+Present
+</div>
+
+<div>
+<div class="big" id="absentCount">0</div>
+Absent
+</div>
+
+<div>
+<div class="big" id="leaveCount">0</div>
+Leave
+</div>
+
+<div>
+<div class="big" id="halfCount">0</div>
+Half Day
+</div>
+
+</div>
+
+<p>
+Attendance: <strong id="percentage">0%</strong>
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>💰 Salary</h2>
+
+<label>Monthly Salary</label>
+<input type="number" id="salary" placeholder="Example: 20000">
+
+<label>Working Days</label>
+<input type="number" id="workingDays" value="26">
+
+<button class="save-btn" onclick="saveSalary()">
+💾 Save Salary
+</button>
+
+<p>
+Daily Salary: ₹<strong id="dailySalary">0</strong>
+</p>
+
+<p>
+Earned Salary: ₹<strong id="earnedSalary">0</strong>
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2>📋 Records</h2>
+
+<button class="delete-btn" onclick="clearAllRecords()">
+🗑️ Clear All
+</button>
+
+<div id="records"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let selectedStatus = "";
+
+let records =
+JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+
+let salarySettings =
+JSON.parse(localStorage.getItem("salarySettings")) || {
+    salary: 0,
+    workingDays: 26
+};
+
+
+/* TODAY */
+
+document.getElementById("date").value =
+new Date().toISOString().split("T")[0];
+
+document.getElementById("salary").value =
+salarySettings.salary;
+
+document.getElementById("workingDays").value =
+salarySettings.workingDays;
+
+
+/* STATUS */
+
+function selectStatus(status, button) {
+
+    selectedStatus = status;
+
+    document.querySelectorAll(".status-buttons button")
+        .forEach(btn => btn.classList.remove("selected"));
+
+    button.classList.add("selected");
+}
+
+
+/* SAVE */
+
+function saveAttendance() {
+
+    const date =
+        document.getElementById("date").value;
+
+    const checkIn =
+        document.getElementById("checkIn").value;
+
+    const checkOut =
+        document.getElementById("checkOut").value;
+
+    const notes =
+        document.getElementById("notes").value;
+
+    if (!date) {
+        alert("Please select date");
+        return;
+    }
+
+    if (!selectedStatus) {
+        alert("Please select attendance status");
+        return;
+    }
+
+    const existing =
+        records.find(r => r.date === date);
+
+    if (existing) {
+
+        existing.status = selectedStatus;
+        existing.checkIn = checkIn;
+        existing.checkOut = checkOut;
+        existing.notes = notes;
+
+    } else {
+
+        records.push({
+            date: date,
+            status: selectedStatus,
+            checkIn: checkIn,
+            checkOut: checkOut,
+            notes: notes
+        });
+
+    }
+
+    localStorage.setItem(
+        "attendanceRecords",
+        JSON.stringify(records)
+    );
+
+    alert("Attendance saved ✅");
+
+    displayRecords();
+    updateSummary();
+
+    resetForm();
+}
+
+
+/* RESET */
+
+function resetForm() {
+
+    selectedStatus = "";
+
+    document.querySelectorAll(".status-buttons button")
+        .forEach(btn => btn.classList.remove("selected"));
+
+    document.getElementById("checkIn").value = "";
+    document.getElementById("checkOut").value = "";
+    document.getElementById("notes").value = "";
+}
+
+
+/* RECORDS */
+
+function displayRecords() {
+
+    const container =
+        document.getElementById("records");
+
+    container.innerHTML = "";
+
+    const sorted =
+        [...records].sort(
+            (a,b) => new Date(b.date) - new Date(a.date)
+        );
+
+    sorted.forEach(record => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "record";
+
+        div.innerHTML = `
+            <strong>${formatDate(record.date)}</strong>
+            <br>
+            Status: ${record.status}
+            <br>
+            ${record.checkIn ?
+                "🕘 In: " + record.checkIn : ""}
+            ${record.checkOut ?
+                "<br>🕔 Out: " + record.checkOut : ""}
+            ${record.notes ?
+                "<br>📝 " + escapeHTML(record.notes) : ""}
+            <br>
+
+            <button class="edit-btn"
+                onclick="editRecord('${record.date}')">
+                ✏️ Edit
+            </button>
+
+            <button class="delete-btn"
+                onclick="deleteRecord('${record.date}')">
+                🗑️ Delete
+            </button>
+        `;
+
+        container.appendChild(div);
+
+    });
+}
+
+
+/* EDIT */
+
+function editRecord(date) {
+
+    const record =
+        records.find(r => r.date === date);
+
+    if (!record) return;
+
+    document.getElementById("date").value =
+        record.date;
+
+    document.getElementById("checkIn").value =
+        record.checkIn || "";
+
+    document.getElementById("checkOut").value =
+        record.checkOut || "";
+
+    document.getElementById("notes").value =
+        record.notes || "";
+
+    selectedStatus = record.status;
+
+    document.querySelectorAll(".status-buttons button")
+        .forEach(btn => {
+
+            btn.classList.remove("selected");
+
+            if (btn.textContent.includes(record.status)) {
+                btn.classList.add("selected");
+            }
+
+        });
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* DELETE */
+
+function deleteRecord(date) {
+
+    if (!confirm("Delete this record?")) return;
+
+    records =
+        records.filter(r => r.date !== date);
+
+    localStorage.setItem(
+        "attendanceRecords",
+        JSON.stringify(records)
+    );
+
+    displayRecords();
+    updateSummary();
+}
+
+
+/* CLEAR */
+
+function clearAllRecords() {
+
+    if (!confirm("Delete ALL attendance records?")) return;
+
+    records = [];
+
+    localStorage.setItem(
+        "attendanceRecords",
+        JSON.stringify(records)
+    );
+
+    displayRecords();
+    updateSummary();
+}
+
+
+/* SUMMARY */
+
+function updateSummary() {
+
+    let present = 0;
+    let absent = 0;
+    let leave = 0;
+    let half = 0;
+
+    records.forEach(record => {
+
+        if (record.status === "Present")
+            present++;
+
+        if (record.status === "Absent")
+            absent++;
+
+        if (record.status === "Leave")
+            leave++;
+
+        if (record.status === "Half Day")
+            half++;
+
+    });
+
+    document.getElementById("presentCount")
+        .textContent = present;
+
+    document.getElementById("absentCount")
+        .textContent = absent;
+
+    document.getElementById("leaveCount")
+        .textContent = leave;
+
+    document.getElementById("halfCount")
+        .textContent = half;
+
+    const total =
+        present + absent + leave + half;
+
+    const percentage =
+        total === 0
+        ? 0
+        : ((present + half * 0.5) / total * 100);
+
+    document.getElementById("percentage")
+        .textContent =
+        percentage.toFixed(1) + "%";
+
+    calculateSalary();
+}
+
+
+/* SALARY */
+
+function saveSalary() {
+
+    salarySettings.salary =
+        Number(document.getElementById("salary").value) || 0;
+
+    salarySettings.workingDays =
+        Number(document.getElementById("workingDays").value) || 26;
+
+    localStorage.setItem(
+        "salarySettings",
+        JSON.stringify(salarySettings)
+    );
+
+    calculateSalary();
+
+    alert("Salary settings saved ✅");
+}
+
+
+function calculateSalary() {
+
+    const daily =
+        salarySettings.salary /
+        salarySettings.workingDays;
+
+    const present =
+        records.filter(r => r.status === "Present").length;
+
+    const half =
+        records.filter(r => r.status === "Half Day").length;
+
+    const earned =
+        daily * (present + half * 0.5);
+
+    document.getElementById("dailySalary")
+        .textContent = daily.toFixed(2);
+
+    document.getElementById("earnedSalary")
+        .textContent = earned.toFixed(2);
+}
+
+
+/* DARK MODE */
+
+function toggleDarkMode() {
+
+    document.body.classList.toggle("dark");
+
+    localStorage.setItem(
+        "darkMode",
+        document.body.classList.contains("dark")
+    );
+}
+
+
+/* DATE FORMAT */
+
+function formatDate(date) {
+
+    const d = new Date(date + "T00:00:00");
+
+    return d.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+}
+
+
+/* ESCAPE HTML */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+
+/* LOAD */
+
+if (
+    localStorage.getItem("darkMode") === "true"
+) {
+    document.body.classList.add("dark");
+}
+
+displayRecords();
+updateSummary();
+
+</script>
+
+</body>
+</html>
