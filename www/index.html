@@ -2,831 +2,568 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
 <title>Work Attendance</title>
 
 <style>
-* {
-    box-sizing: border-box;
+:root{
+    --bg:#f4f7fb;
+    --surface:#ffffff;
+    --surface2:#f8fafc;
+    --text:#111827;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --primary:#2563eb;
+    --primary2:#7c3aed;
+    --danger:#ef4444;
+    --shadow:0 14px 40px rgba(15,23,42,.08);
 }
-
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f2f4f7;
-    color: #222;
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    transition:background .25s,color .25s;
 }
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+a{text-decoration:none;color:inherit}
 
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
+#intro{
+    position:fixed; inset:0; z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#0f172a,#1e1b4b);
+    color:#fff;
+    transition:opacity .55s ease,visibility .55s ease;
 }
-
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
+#intro.hide{opacity:0;visibility:hidden;pointer-events:none}
+.intro-inner{text-align:center;animation:introIn .8s ease both}
+.intro-logo{
+    width:118px;height:118px;object-fit:contain;
+    filter:drop-shadow(0 16px 30px rgba(0,0,0,.35));
+    animation:logoPop 1s cubic-bezier(.2,.8,.2,1) both;
 }
-
-.card {
-    background: white;
-    padding: 18px;
-    margin-bottom: 15px;
-    border-radius: 15px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+.intro-title{font-size:30px;font-weight:800;margin:18px 0 5px;letter-spacing:-.7px}
+.intro-sub{color:#cbd5e1;font-size:14px}
+.intro-loader{
+    width:150px;height:4px;background:rgba(255,255,255,.15);
+    border-radius:99px;margin:24px auto 0;overflow:hidden
 }
-
-label {
-    display: block;
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-weight: bold;
+.intro-loader span{
+    display:block;height:100%;width:45%;background:#fff;border-radius:99px;
+    animation:load 1.25s ease-in-out infinite;
 }
+@keyframes introIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes logoPop{from{opacity:0;transform:scale(.45) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes load{0%{transform:translateX(-180%)}100%{transform:translateX(330%)}}
 
-input, textarea, button {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 16px;
+.appbar{
+    position:sticky;top:0;z-index:1000;
+    height:68px;padding:0 16px;
+    display:flex;align-items:center;gap:12px;
+    background:rgba(255,255,255,.88);
+    backdrop-filter:blur(18px);
+    border-bottom:1px solid var(--line);
 }
-
-textarea {
-    resize: vertical;
+.icon-btn{
+    width:42px;height:42px;border:1px solid var(--line);border-radius:13px;
+    background:var(--surface);color:var(--text);display:grid;place-items:center;
+    font-size:20px;box-shadow:0 5px 15px rgba(15,23,42,.06)
 }
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand-text{min-width:0}
+.brand-title{font-weight:800;font-size:16px;white-space:nowrap}
+.brand-sub{font-size:11px;color:var(--muted)}
+.app-spacer{flex:1}
 
-.status-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+.drawer-backdrop{
+    position:fixed;inset:0;background:rgba(2,6,23,.5);z-index:1998;
+    opacity:0;visibility:hidden;transition:.25s
 }
-
-.status-buttons button {
-    cursor: pointer;
+.drawer{
+    position:fixed;left:0;top:0;bottom:0;width:min(315px,86vw);z-index:1999;
+    background:var(--surface);border-right:1px solid var(--line);
+    transform:translateX(-105%);transition:transform .3s ease;
+    padding:18px 14px;box-shadow:20px 0 50px rgba(0,0,0,.15)
 }
-
-.present { background: #d4edda; }
-.absent { background: #f8d7da; }
-.leave { background: #fff3cd; }
-.half { background: #d1ecf1; }
-
-.selected {
-    border: 3px solid #333;
+.drawer.open{transform:none}
+.drawer-backdrop.open{opacity:1;visibility:visible}
+.drawer-head{display:flex;align-items:center;gap:12px;padding:8px 8px 18px}
+.drawer-head img{width:48px;height:48px;object-fit:contain}
+.drawer-title{font-weight:800}.drawer-sub{font-size:12px;color:var(--muted)}
+.nav{display:grid;gap:6px}
+.nav button{
+    width:100%;border:0;background:transparent;color:var(--text);
+    padding:13px 14px;border-radius:12px;text-align:left;font-weight:650
 }
+.nav button:hover{background:var(--surface2)}
+.nav .active{background:rgba(37,99,235,.1);color:var(--primary)}
+.drawer-footer{position:absolute;left:14px;right:14px;bottom:18px}
+.small-note{font-size:11px;color:var(--muted);line-height:1.5}
 
-.save-btn {
-    margin-top: 15px;
-    background: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
+.container{max-width:760px;margin:auto;padding:20px 16px 70px}
+.hero{
+    background:linear-gradient(135deg,#1d4ed8,#7c3aed);
+    color:#fff;border-radius:24px;padding:24px;margin:16px 0;
+    box-shadow:0 20px 50px rgba(37,99,235,.2)
 }
-
-.record {
-    border: 1px solid #ddd;
-    padding: 12px;
-    border-radius: 10px;
-    margin-top: 10px;
+.hero h1{margin:0 0 7px;font-size:28px;letter-spacing:-.8px}
+.hero p{margin:0;color:#dbeafe;line-height:1.5}
+.hero-row{display:flex;align-items:center;gap:16px}
+.hero-logo{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 10px 20px rgba(0,0,0,.25))}
+.card{
+    background:var(--surface);border:1px solid var(--line);
+    padding:20px;margin-bottom:16px;border-radius:20px;box-shadow:var(--shadow)
 }
-
-.record button {
-    width: auto;
-    padding: 7px 12px;
-    margin-top: 8px;
+.card h2{margin:0 0 16px;font-size:19px}
+.section-title{scroll-margin-top:90px}
+label{display:block;margin:12px 0 7px;font-size:13px;font-weight:750;color:var(--muted)}
+input,textarea,select{
+    width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);color:var(--text);outline:none;transition:.2s
 }
-
-.delete-btn {
-    background: #dc3545;
-    color: white;
-    border: none;
+input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.status-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.status-buttons button{
+    border:1px solid var(--line);padding:13px;border-radius:13px;font-weight:750;
+    transition:transform .15s,box-shadow .15s,border .15s
 }
-
-.edit-btn {
-    background: #ffc107;
-    border: none;
+.status-buttons button:hover{transform:translateY(-1px)}
+.present{background:#ecfdf5;color:#047857}.absent{background:#fef2f2;color:#b91c1c}
+.leave{background:#fffbeb;color:#a16207}.half{background:#eff6ff;color:#1d4ed8}
+.selected{border:2px solid currentColor!important;box-shadow:0 6px 18px rgba(15,23,42,.1)}
+.primary-btn,.secondary-btn,.danger-btn,.warning-btn{
+    border:0;border-radius:12px;padding:12px 15px;font-weight:750;transition:.2s
 }
-
-.summary {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+.primary-btn{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}
+.secondary-btn{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+.danger-btn{background:#fee2e2;color:#b91c1c}.warning-btn{background:#fef3c7;color:#92400e}
+.full{width:100%;margin-top:14px}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:15px 10px;border-radius:15px;background:var(--surface2);text-align:center;border:1px solid var(--line)}
+.stat .big{font-size:24px;font-weight:850}.stat small{color:var(--muted)}
+.progress{height:9px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:10px}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary2));transition:width .5s}
+.record{
+    border:1px solid var(--line);padding:14px;border-radius:15px;margin-top:10px;
+    background:var(--surface2)
 }
-
-.summary div {
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    background: #eee;
+.record-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.badge{font-size:12px;font-weight:800;padding:6px 9px;border-radius:99px}
+.badge.present{background:#dcfce7}.badge.absent{background:#fee2e2}
+.badge.leave{background:#fef3c7}.badge.half{background:#dbeafe}
+.record-meta{font-size:13px;color:var(--muted);line-height:1.65;margin-top:7px}
+.record-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.record-actions button{width:auto;padding:8px 11px;border-radius:9px;border:0;font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:22px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid var(--line)}
+.setting-row:last-child{border-bottom:0}
+.switch{position:relative;width:50px;height:28px;display:inline-block}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:.2s}
+.slider:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s}
+.switch input:checked + .slider{background:var(--primary)}
+.switch input:checked + .slider:before{transform:translateX(22px)}
+.toast{
+    position:fixed;left:50%;bottom:22px;z-index:3000;transform:translate(-50%,20px);
+    background:#111827;color:#fff;padding:12px 16px;border-radius:12px;
+    opacity:0;pointer-events:none;transition:.25s;box-shadow:0 12px 30px rgba(0,0,0,.2);
+    max-width:90vw;text-align:center
 }
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
 
-.big {
-    font-size: 24px;
-    font-weight: bold;
+.dark{
+    --bg:#090d16;--surface:#111827;--surface2:#172033;--text:#f8fafc;
+    --muted:#94a3b8;--line:#263246;--shadow:0 14px 40px rgba(0,0,0,.25)
 }
+.dark .appbar{background:rgba(17,24,39,.88)}
+.dark .present{background:#052e24;color:#6ee7b7}.dark .absent{background:#3a1116;color:#fca5a5}
+.dark .leave{background:#33250a;color:#fde68a}.dark .half{background:#0b2440;color:#93c5fd}
+.dark .badge.present{background:#064e3b}.dark .badge.absent{background:#7f1d1d}
+.dark .badge.leave{background:#713f12}.dark .badge.half{background:#1e3a8a}
 
-.dark {
-    background: #181818;
-    color: white;
-}
-
-.dark .card {
-    background: #242424;
-}
-
-.dark input,
-.dark textarea {
-    background: #333;
-    color: white;
-    border-color: #555;
-}
-
-.dark .record {
-    border-color: #555;
-}
-
-.toggle {
-    background: #333;
-    color: white;
-    border: none;
-    margin-bottom: 15px;
+@media(max-width:620px){
+    .summary{grid-template-columns:repeat(2,1fr)}
+    .hero h1{font-size:24px}.hero-logo{width:62px;height:62px}
+    .actions{grid-template-columns:1fr}
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>💼 Work Attendance</h1>
-
-<button class="toggle" onclick="toggleDarkMode()">
-🌙 Dark Mode
-</button>
-
-<div class="card">
-
-<h2>Mark Attendance</h2>
-
-<label>Date</label>
-<input type="date" id="date">
-
-<label>Status</label>
-
-<div class="status-buttons">
-
-<button class="present" onclick="selectStatus('Present', this)">
-✅ Present
-</button>
-
-<button class="absent" onclick="selectStatus('Absent', this)">
-❌ Absent
-</button>
-
-<button class="leave" onclick="selectStatus('Leave', this)">
-🏖️ Leave
-</button>
-
-<button class="half" onclick="selectStatus('Half Day', this)">
-🌓 Half Day
-</button>
-
+<div id="intro">
+  <div class="intro-inner">
+    <img class="intro-logo" src="app-logo.png" alt="Work Attendance">
+    <div class="intro-title">Work Attendance</div>
+    <div class="intro-sub">Simple • Professional • Reliable</div>
+    <div class="intro-loader"><span></span></div>
+  </div>
 </div>
 
-<label>Check In</label>
-<input type="time" id="checkIn">
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeMenu()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <img src="app-logo.png" alt="Logo">
+    <div><div class="drawer-title">Work Attendance</div><div class="drawer-sub">Your work companion</div></div>
+  </div>
+  <div class="nav">
+    <button class="active" onclick="goTo('home')">🏠 Dashboard</button>
+    <button onclick="goTo('attendance')">📅 Attendance</button>
+    <button onclick="goTo('summary')">📊 Summary</button>
+    <button onclick="goTo('salary-section')">💰 Salary</button>
+    <button onclick="goTo('records-section')">📋 Records</button>
+    <button onclick="goTo('reminders')">⏰ Reminders</button>
+    <button onclick="goTo('settings')">⚙️ Settings</button>
+  </div>
+  <div class="drawer-footer">
+    <div class="small-note">Attendance data stays on this device.</div>
+  </div>
+</aside>
 
-<label>Check Out</label>
-<input type="time" id="checkOut">
+<header class="appbar">
+  <button class="icon-btn" onclick="openMenu()" aria-label="Menu">☰</button>
+  <div class="brand">
+    <img src="app-logo.png" alt="Logo">
+    <div class="brand-text"><div class="brand-title">Work Attendance</div><div class="brand-sub">Daily attendance tracker</div></div>
+  </div>
+  <div class="app-spacer"></div>
+  <button class="icon-btn" onclick="toggleDarkMode()" aria-label="Dark mode">🌙</button>
+</header>
 
-<label>Notes</label>
-<textarea id="notes" rows="3"
-placeholder="Optional notes..."></textarea>
+<main class="container" id="home">
 
-<button class="save-btn" onclick="saveAttendance()">
-💾 Save Attendance
-</button>
+<section class="hero">
+  <div class="hero-row">
+    <img class="hero-logo" src="app-logo.png" alt="">
+    <div>
+      <h1>Good to see you 👋</h1>
+      <p>Track attendance, working hours and salary in one clean place.</p>
+    </div>
+  </div>
+</section>
 
-</div>
+<section class="card section-title" id="attendance">
+  <h2>📅 Mark Attendance</h2>
 
+  <label>Date</label>
+  <input type="date" id="date">
 
-<div class="card">
+  <label>Status</label>
+  <div class="status-buttons">
+    <button class="present" onclick="selectStatus('Present',this)">✅ Present</button>
+    <button class="absent" onclick="selectStatus('Absent',this)">❌ Absent</button>
+    <button class="leave" onclick="selectStatus('Leave',this)">🏖️ Leave</button>
+    <button class="half" onclick="selectStatus('Half Day',this)">🌓 Half Day</button>
+  </div>
 
-<h2>📊 Summary</h2>
+  <label>Check In</label><input type="time" id="checkIn">
+  <label>Check Out</label><input type="time" id="checkOut">
+  <label>Notes</label><textarea id="notes" rows="3" placeholder="Optional notes..."></textarea>
 
-<div class="summary">
+  <button class="primary-btn full" onclick="saveAttendance()">💾 Save Attendance</button>
+</section>
 
-<div>
-<div class="big" id="presentCount">0</div>
-Present
-</div>
+<section class="card section-title" id="summary">
+  <h2>📊 Attendance Summary</h2>
+  <div class="summary">
+    <div class="stat"><div class="big" id="presentCount">0</div><small>Present</small></div>
+    <div class="stat"><div class="big" id="absentCount">0</div><small>Absent</small></div>
+    <div class="stat"><div class="big" id="leaveCount">0</div><small>Leave</small></div>
+    <div class="stat"><div class="big" id="halfCount">0</div><small>Half Day</small></div>
+  </div>
+  <p>Attendance: <strong id="percentage">0%</strong></p>
+  <div class="progress"><span id="progressBar"></span></div>
+</section>
 
-<div>
-<div class="big" id="absentCount">0</div>
-Absent
-</div>
+<section class="card section-title" id="salary-section">
+  <h2>💰 Salary</h2>
+  <label>Monthly Salary</label><input type="number" id="salary" placeholder="Example: 20000">
+  <label>Working Days</label><input type="number" id="workingDays" value="26">
+  <button class="primary-btn full" onclick="saveSalary()">💾 Save Salary</button>
+  <div class="actions" style="margin-top:12px">
+    <div class="stat"><div class="big">₹<span id="dailySalary">0</span></div><small>Daily Salary</small></div>
+    <div class="stat"><div class="big">₹<span id="earnedSalary">0</span></div><small>Earned Salary</small></div>
+  </div>
+</section>
 
-<div>
-<div class="big" id="leaveCount">0</div>
-Leave
-</div>
+<section class="card section-title" id="records-section">
+  <h2>📋 Records</h2>
+  <div class="actions">
+    <button class="secondary-btn" onclick="exportCSV()">📥 Export CSV</button>
+    <button class="secondary-btn" onclick="window.print()">🖨️ Print / PDF</button>
+  </div>
+  <button class="danger-btn full" onclick="clearAllRecords()">🗑️ Clear All Records</button>
+  <div id="records"></div>
+</section>
 
-<div>
-<div class="big" id="halfCount">0</div>
-Half Day
-</div>
+<section class="card section-title" id="reminders">
+  <h2>⏰ Attendance Reminders</h2>
+  <p style="color:var(--muted);line-height:1.6;margin-top:0">
+    10:00 AM reminder and 5:00 PM reminder are scheduled as native Android notifications.
+    If attendance is already marked for a day, that day's reminders are skipped.
+  </p>
+  <button class="primary-btn full" onclick="setupAttendanceReminders(true)">🔔 Enable / Refresh Reminders</button>
+  <button class="secondary-btn full" onclick="testNotification()">🧪 Test Notification</button>
+  <p id="reminderStatus" style="font-size:12px;color:var(--muted);margin-bottom:0"></p>
+</section>
 
-</div>
+<section class="card section-title" id="settings">
+  <h2>⚙️ Settings</h2>
+  <div class="setting-row">
+    <div><strong>🌙 Dark Mode</strong><div class="small-note">Use a darker appearance</div></div>
+    <label class="switch"><input type="checkbox" id="darkToggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
+  </div>
+  <div class="setting-row">
+    <div><strong>🔔 Notifications</strong><div class="small-note">Allow attendance reminders</div></div>
+    <button class="secondary-btn" onclick="setupAttendanceReminders(true)">Enable</button>
+  </div>
+</section>
 
-<p>
-Attendance: <strong id="percentage">0%</strong>
-</p>
+<div class="footer">Work Attendance • Your data stays on this device</div>
+</main>
 
-</div>
-
-
-<div class="card">
-
-<h2>💰 Salary</h2>
-
-<label>Monthly Salary</label>
-<input type="number" id="salary" placeholder="Example: 20000">
-
-<label>Working Days</label>
-<input type="number" id="workingDays" value="26">
-
-<button class="save-btn" onclick="saveSalary()">
-💾 Save Salary
-</button>
-
-<p>
-Daily Salary: ₹<strong id="dailySalary">0</strong>
-</p>
-
-<p>
-Earned Salary: ₹<strong id="earnedSalary">0</strong>
-</p>
-
-</div>
-
-
-<div class="card">
-
-<h2>📋 Records</h2>
-
-<button class="delete-btn" onclick="clearAllRecords()">
-🗑️ Clear All
-</button>
-
-<div id="records"></div>
-
-</div>
-
-</div>
-
+<div class="toast" id="toast"></div>
 
 <script>
-
 let selectedStatus = "";
+let records = JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+let salarySettings = JSON.parse(localStorage.getItem("salarySettings")) || {salary:0,workingDays:26};
 
-let records =
-JSON.parse(localStorage.getItem("attendanceRecords")) || [];
+const LocalNotifications = window.Capacitor?.Plugins?.LocalNotifications || null;
 
-let salarySettings =
-JSON.parse(localStorage.getItem("salarySettings")) || {
-    salary: 0,
-    workingDays: 26
-};
+function showToast(message){
+  const t=document.getElementById("toast"); t.textContent=message; t.classList.add("show");
+  clearTimeout(window.__toast); window.__toast=setTimeout(()=>t.classList.remove("show"),2600);
+}
+function openMenu(){document.getElementById("drawer").classList.add("open");document.getElementById("drawerBackdrop").classList.add("open")}
+function closeMenu(){document.getElementById("drawer").classList.remove("open");document.getElementById("drawerBackdrop").classList.remove("open")}
+function goTo(id){closeMenu();document.getElementById(id)?.scrollIntoView({behavior:"smooth",block:"start"})}
 
-
-/* TODAY */
-
-document.getElementById("date").value =
-new Date().toISOString().split("T")[0];
-
-document.getElementById("salary").value =
-salarySettings.salary;
-
-document.getElementById("workingDays").value =
-salarySettings.workingDays;
-
-
-/* STATUS */
-
-function selectStatus(status, button) {
-
-    selectedStatus = status;
-
-    document.querySelectorAll(".status-buttons button")
-        .forEach(btn => btn.classList.remove("selected"));
-
-    button.classList.add("selected");
+function selectStatus(status,button){
+  selectedStatus=status;
+  document.querySelectorAll(".status-buttons button").forEach(b=>b.classList.remove("selected"));
+  button.classList.add("selected");
 }
 
+function saveAttendance(){
+  const date=document.getElementById("date").value;
+  const checkIn=document.getElementById("checkIn").value;
+  const checkOut=document.getElementById("checkOut").value;
+  const notes=document.getElementById("notes").value;
+  if(!date){showToast("Please select a date");return}
+  if(!selectedStatus){showToast("Please select attendance status");return}
 
-/* SAVE */
+  const existing=records.find(r=>r.date===date);
+  if(existing){existing.status=selectedStatus;existing.checkIn=checkIn;existing.checkOut=checkOut;existing.notes=notes}
+  else records.push({date,status:selectedStatus,checkIn,checkOut,notes});
 
-function saveAttendance() {
+  localStorage.setItem("attendanceRecords",JSON.stringify(records));
+  if(isToday(date)) cancelTodayReminders();
+  displayRecords(); updateSummary(); resetForm();
+  showToast("Attendance saved successfully ✓");
+  scheduleFivePMReminders();
+}
 
-    const date =
-        document.getElementById("date").value;
+function resetForm(){
+  selectedStatus="";
+  document.querySelectorAll(".status-buttons button").forEach(b=>b.classList.remove("selected"));
+  ["checkIn","checkOut","notes"].forEach(id=>document.getElementById(id).value="");
+}
+function isToday(dateString){
+  return dateString === new Date().toISOString().split("T")[0];
+}
+function dateKey(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
 
-    const checkIn =
-        document.getElementById("checkIn").value;
+function displayRecords(){
+  const c=document.getElementById("records"); c.innerHTML="";
+  const sorted=[...records].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!sorted.length){c.innerHTML='<div class="empty">No attendance records yet.</div>';return}
+  sorted.forEach(record=>{
+    const div=document.createElement("div"); div.className="record";
+    const cls=record.status==="Present"?"present":record.status==="Absent"?"absent":record.status==="Leave"?"leave":"half";
+    div.innerHTML=`
+      <div class="record-top"><strong>${formatDate(record.date)}</strong><span class="badge ${cls}">${escapeHTML(record.status)}</span></div>
+      <div class="record-meta">
+        ${record.checkIn?"🕘 In: "+escapeHTML(record.checkIn)+"<br>":""}
+        ${record.checkOut?"🕔 Out: "+escapeHTML(record.checkOut)+"<br>":""}
+        ${record.notes?"📝 "+escapeHTML(record.notes):""}
+      </div>
+      <div class="record-actions">
+        <button class="warning-btn" onclick="editRecord('${record.date}')">✏️ Edit</button>
+        <button class="danger-btn" onclick="deleteRecord('${record.date}')">🗑️ Delete</button>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+function editRecord(date){
+  const r=records.find(x=>x.date===date); if(!r)return;
+  document.getElementById("date").value=r.date;
+  document.getElementById("checkIn").value=r.checkIn||"";
+  document.getElementById("checkOut").value=r.checkOut||"";
+  document.getElementById("notes").value=r.notes||"";
+  selectedStatus=r.status;
+  document.querySelectorAll(".status-buttons button").forEach(b=>b.classList.toggle("selected",b.textContent.includes(r.status)));
+  document.getElementById("attendance").scrollIntoView({behavior:"smooth"});
+}
+function deleteRecord(date){
+  if(!confirm("Delete this record?"))return;
+  records=records.filter(r=>r.date!==date);
+  localStorage.setItem("attendanceRecords",JSON.stringify(records));
+  displayRecords();updateSummary();showToast("Record deleted");
+  scheduleFivePMReminders();
+}
+function clearAllRecords(){
+  if(!confirm("Delete ALL attendance records?"))return;
+  records=[];localStorage.setItem("attendanceRecords",JSON.stringify(records));
+  displayRecords();updateSummary();showToast("All records cleared");scheduleFivePMReminders();
+}
 
-    const checkOut =
-        document.getElementById("checkOut").value;
+function updateSummary(){
+  const p=records.filter(r=>r.status==="Present").length;
+  const a=records.filter(r=>r.status==="Absent").length;
+  const l=records.filter(r=>r.status==="Leave").length;
+  const h=records.filter(r=>r.status==="Half Day").length;
+  document.getElementById("presentCount").textContent=p;
+  document.getElementById("absentCount").textContent=a;
+  document.getElementById("leaveCount").textContent=l;
+  document.getElementById("halfCount").textContent=h;
+  const total=p+a+l+h, pct=total?((p+h*.5)/total*100):0;
+  document.getElementById("percentage").textContent=pct.toFixed(1)+"%";
+  document.getElementById("progressBar").style.width=Math.min(100,pct)+"%";
+  calculateSalary();
+}
+function saveSalary(){
+  salarySettings.salary=Number(document.getElementById("salary").value)||0;
+  salarySettings.workingDays=Number(document.getElementById("workingDays").value)||26;
+  localStorage.setItem("salarySettings",JSON.stringify(salarySettings));
+  calculateSalary();showToast("Salary settings saved ✓");
+}
+function calculateSalary(){
+  const daily=salarySettings.salary/(salarySettings.workingDays||26);
+  const p=records.filter(r=>r.status==="Present").length;
+  const h=records.filter(r=>r.status==="Half Day").length;
+  document.getElementById("dailySalary").textContent=daily.toFixed(2);
+  document.getElementById("earnedSalary").textContent=(daily*(p+h*.5)).toFixed(2);
+}
+function toggleDarkMode(){
+  document.body.classList.toggle("dark");
+  const on=document.body.classList.contains("dark");
+  localStorage.setItem("darkMode",on);
+  document.getElementById("darkToggle").checked=on;
+}
+function formatDate(date){return new Date(date+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}
+function escapeHTML(text){const d=document.createElement("div");d.textContent=text;return d.innerHTML}
 
-    const notes =
-        document.getElementById("notes").value;
+function exportCSV(){
+  const rows=[["Date","Status","Check In","Check Out","Notes"],...records.map(r=>[r.date,r.status,r.checkIn||"",r.checkOut||"",r.notes||""])];
+  const csv=rows.map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="work-attendance.csv";a.click();URL.revokeObjectURL(a.href);
+}
 
-    if (!date) {
-        alert("Please select date");
-        return;
+async function getNotificationPermission(){
+  if(!LocalNotifications) return {display:"unavailable"};
+  try{return await LocalNotifications.checkPermissions()}catch(e){return {display:"error",error:e}}
+}
+
+async function setupAttendanceReminders(showMessage=false){
+  const status=document.getElementById("reminderStatus");
+  if(!LocalNotifications){
+    status.textContent="Notifications are unavailable in this build.";
+    if(showMessage)showToast("Notification service unavailable");
+    return false;
+  }
+  try{
+    let permission=await LocalNotifications.checkPermissions();
+    if(permission.display!=="granted") permission=await LocalNotifications.requestPermissions();
+    if(permission.display!=="granted"){
+      status.textContent="Notification permission is not enabled. Allow notifications in Android Settings.";
+      if(showMessage)showToast("Please allow notifications");
+      return false;
     }
 
-    if (!selectedStatus) {
-        alert("Please select attendance status");
-        return;
+    if(LocalNotifications.createChannel){
+      try{await LocalNotifications.createChannel({id:"attendance-reminders",name:"Attendance Reminders",description:"Work attendance reminders",importance:5,sound:"default"})}catch(e){}
     }
 
-    const existing =
-        records.find(r => r.date === date);
-
-    if (existing) {
-
-        existing.status = selectedStatus;
-        existing.checkIn = checkIn;
-        existing.checkOut = checkOut;
-        existing.notes = notes;
-
-    } else {
-
-        records.push({
-            date: date,
-            status: selectedStatus,
-            checkIn: checkIn,
-            checkOut: checkOut,
-            notes: notes
-        });
-
-    }
-
-    localStorage.setItem(
-        "attendanceRecords",
-        JSON.stringify(records)
-    );
-cancelTodayFivePMReminder();
-
-    alert("Attendance saved ✅");
-
-    displayRecords();
-    updateSummary();
-
-    resetForm();
-}
-
-
-/* RESET */
-
-function resetForm() {
-
-    selectedStatus = "";
-
-    document.querySelectorAll(".status-buttons button")
-        .forEach(btn => btn.classList.remove("selected"));
-
-    document.getElementById("checkIn").value = "";
-    document.getElementById("checkOut").value = "";
-    document.getElementById("notes").value = "";
-}
-
-
-/* RECORDS */
-
-function displayRecords() {
-
-    const container =
-        document.getElementById("records");
-
-    container.innerHTML = "";
-
-    const sorted =
-        [...records].sort(
-            (a,b) => new Date(b.date) - new Date(a.date)
-        );
-
-    sorted.forEach(record => {
-
-        const div =
-            document.createElement("div");
-
-        div.className = "record";
-
-        div.innerHTML = `
-            <strong>${formatDate(record.date)}</strong>
-            <br>
-            Status: ${record.status}
-            <br>
-            ${record.checkIn ?
-                "🕘 In: " + record.checkIn : ""}
-            ${record.checkOut ?
-                "<br>🕔 Out: " + record.checkOut : ""}
-            ${record.notes ?
-                "<br>📝 " + escapeHTML(record.notes) : ""}
-            <br>
-
-            <button class="edit-btn"
-                onclick="editRecord('${record.date}')">
-                ✏️ Edit
-            </button>
-
-            <button class="delete-btn"
-                onclick="deleteRecord('${record.date}')">
-                🗑️ Delete
-            </button>
-        `;
-
-        container.appendChild(div);
-
-    });
-}
-
-
-/* EDIT */
-
-function editRecord(date) {
-
-    const record =
-        records.find(r => r.date === date);
-
-    if (!record) return;
-
-    document.getElementById("date").value =
-        record.date;
-
-    document.getElementById("checkIn").value =
-        record.checkIn || "";
-
-    document.getElementById("checkOut").value =
-        record.checkOut || "";
-
-    document.getElementById("notes").value =
-        record.notes || "";
-
-    selectedStatus = record.status;
-
-    document.querySelectorAll(".status-buttons button")
-        .forEach(btn => {
-
-            btn.classList.remove("selected");
-
-            if (btn.textContent.includes(record.status)) {
-                btn.classList.add("selected");
-            }
-
-        });
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-/* DELETE */
-
-function deleteRecord(date) {
-
-    if (!confirm("Delete this record?")) return;
-
-    records =
-        records.filter(r => r.date !== date);
-
-    localStorage.setItem(
-        "attendanceRecords",
-        JSON.stringify(records)
-    );
-
-    displayRecords();
-    updateSummary();
-}
-
-
-/* CLEAR */
-
-function clearAllRecords() {
-
-    if (!confirm("Delete ALL attendance records?")) return;
-
-    records = [];
-
-    localStorage.setItem(
-        "attendanceRecords",
-        JSON.stringify(records)
-    );
-
-    displayRecords();
-    updateSummary();
-}
-
-
-/* SUMMARY */
-
-function updateSummary() {
-
-    let present = 0;
-    let absent = 0;
-    let leave = 0;
-    let half = 0;
-
-    records.forEach(record => {
-
-        if (record.status === "Present")
-            present++;
-
-        if (record.status === "Absent")
-            absent++;
-
-        if (record.status === "Leave")
-            leave++;
-
-        if (record.status === "Half Day")
-            half++;
-
-    });
-
-    document.getElementById("presentCount")
-        .textContent = present;
-
-    document.getElementById("absentCount")
-        .textContent = absent;
-
-    document.getElementById("leaveCount")
-        .textContent = leave;
-
-    document.getElementById("halfCount")
-        .textContent = half;
-
-    const total =
-        present + absent + leave + half;
-
-    const percentage =
-        total === 0
-        ? 0
-        : ((present + half * 0.5) / total * 100);
-
-    document.getElementById("percentage")
-        .textContent =
-        percentage.toFixed(1) + "%";
-
-    calculateSalary();
-}
-
-
-/* SALARY */
-
-function saveSalary() {
-
-    salarySettings.salary =
-        Number(document.getElementById("salary").value) || 0;
-
-    salarySettings.workingDays =
-        Number(document.getElementById("workingDays").value) || 26;
-
-    localStorage.setItem(
-        "salarySettings",
-        JSON.stringify(salarySettings)
-    );
-
-    calculateSalary();
-
-    alert("Salary settings saved ✅");
-}
-
-
-function calculateSalary() {
-
-    const daily =
-        salarySettings.salary /
-        salarySettings.workingDays;
-
-    const present =
-        records.filter(r => r.status === "Present").length;
-
-    const half =
-        records.filter(r => r.status === "Half Day").length;
-
-    const earned =
-        daily * (present + half * 0.5);
-
-    document.getElementById("dailySalary")
-        .textContent = daily.toFixed(2);
-
-    document.getElementById("earnedSalary")
-        .textContent = earned.toFixed(2);
-}
-
-
-/* DARK MODE */
-
-function toggleDarkMode() {
-
-    document.body.classList.toggle("dark");
-
-    localStorage.setItem(
-        "darkMode",
-        document.body.classList.contains("dark")
-    );
-}
-
-
-/* DATE FORMAT */
-
-function formatDate(date) {
-
-    const d = new Date(date + "T00:00:00");
-
-    return d.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-        }
-    );
-}
-
-
-/* ESCAPE HTML */
-
-function escapeHTML(text) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-}
-
-
-/* LOAD */
-
-if (
-    localStorage.getItem("darkMode") === "true"
-) {
-    document.body.classList.add("dark");
-}
-
-displayRecords();
-updateSummary();
-
-/* =========================
-   ATTENDANCE REMINDERS
-   ========================= */
-const LocalNotifications = window.Capacitor?.Plugins?.LocalNotifications;
-
-if (!LocalNotifications) {
-    alert("❌ Local Notifications plugin கிடைக்கவில்லை");
-} else {
-    alert("✅ Local Notifications plugin கிடைத்துவிட்டது");
-}
-async function setupAttendanceReminders() {
-    if (!LocalNotifications) {
-        console.log("Local Notifications plugin not available");
-        return;
-    }
-
-    try {
-        // Ask notification permission
-        let permission = await LocalNotifications.checkPermissions();
-
-        if (permission.display !== "granted") {
-            permission = await LocalNotifications.requestPermissions();
-        }
-
-        if (permission.display !== "granted") {
-            console.log("Notification permission not granted");
-            return;
-        }
-
-        // 10:00 AM daily reminder
-        await LocalNotifications.cancel({
-            notifications: [{ id: 1001 }]
-        });
-
-        const tenAM = new Date();
-        tenAM.setHours(10, 0, 0, 0);
-
-        if (tenAM <= new Date()) {
-            tenAM.setDate(tenAM.getDate() + 1);
-        }
-
-        await LocalNotifications.schedule({
-            notifications: [{
-                id: 1001,
-                title: "Work Attendance",
-                body: "⏰ 10 AM — Please mark your attendance.",
-                schedule: {
-                    at: tenAM,
-                    repeats: true,
-                    every: "day",
-                    allowWhileIdle: true
-                }
-            }]
-        });
-
-        // Schedule 5 PM reminders for the next 30 days
-        await scheduleFivePMReminders();
-
-        console.log("Attendance reminders scheduled ✅");
-
-    } catch (error) {
-        console.error("Reminder setup error:", error);
-    }
-}
-
-
-async function scheduleFivePMReminders() {
-    if (!LocalNotifications) return;
-
-    const notifications = [];
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 30; i++) {
-
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-
-        const dateString =
-            date.getFullYear() + "-" +
-            String(date.getMonth() + 1).padStart(2, "0") + "-" +
-            String(date.getDate()).padStart(2, "0");
-
-        // If attendance already marked, don't schedule 5 PM reminder
-        const alreadyMarked = records.some(
-            record => record.date === dateString
-        );
-
-        if (alreadyMarked) continue;
-
-        const fivePM = new Date(date);
-        fivePM.setHours(17, 0, 0, 0);
-
-        // Don't schedule today's 5 PM if it has already passed
-        if (fivePM <= new Date()) continue;
-
+    const ids=[];
+    for(let i=0;i<30;i++){ids.push({id:1000+i},{id:5000+i})}
+    try{await LocalNotifications.cancel({notifications:ids})}catch(e){}
+
+    const now=new Date(), notifications=[];
+    for(let i=0;i<30;i++){
+      const d=new Date(now);d.setHours(0,0,0,0);d.setDate(d.getDate()+i);
+      const key=dateKey(d);
+      if(records.some(r=>r.date===key)) continue;
+
+      const ten=new Date(d);ten.setHours(10,0,0,0);
+      const five=new Date(d);five.setHours(17,0,0,0);
+
+      if(ten>now){
         notifications.push({
-            id: 5000 + i,
-            title: "Work Attendance",
-            body: "🔔 5 PM — You haven't marked today's attendance.",
-            schedule: {
-                at: fivePM,
-                allowWhileIdle: true
-            }
+          id:1000+i,title:"Work Attendance",body:"⏰ 10 AM — Please mark today's attendance.",
+          channelId:"attendance-reminders",schedule:{at:ten,allowWhileIdle:true}
         });
-    }
-
-    if (notifications.length > 0) {
-        await LocalNotifications.schedule({
-            notifications: notifications
+      }
+      if(five>now){
+        notifications.push({
+          id:5000+i,title:"Work Attendance",body:"🔔 5 PM — You haven't marked today's attendance.",
+          channelId:"attendance-reminders",schedule:{at:five,allowWhileIdle:true}
         });
+      }
     }
+    if(notifications.length) await LocalNotifications.schedule({notifications});
+    status.textContent="Reminders enabled ✓";
+    if(showMessage)showToast("Attendance reminders enabled ✓");
+    return true;
+  }catch(error){
+    console.error("Reminder setup error:",error);
+    status.textContent="Reminder setup failed. Check notification permission in Android Settings.";
+    if(showMessage)showToast("Reminder setup failed — check Android notification permission");
+    return false;
+  }
 }
 
+async function cancelTodayReminders(){
+  if(!LocalNotifications)return;
+  const d=new Date(); const dayIndex=Math.floor((d-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/86400000);
+  try{await LocalNotifications.cancel({notifications:[{id:1000+dayIndex},{id:5000+dayIndex}]})}catch(e){console.log(e)}
+}
+async function scheduleFivePMReminders(){ return setupAttendanceReminders(false); }
 
-// Cancel today's 5 PM reminder
-async function cancelTodayFivePMReminder() {
-    if (!LocalNotifications) return;
-
-    const today = new Date();
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const dayIndex = Math.floor(
-        (today - startOfDay) / (1000 * 60 * 60 * 24)
-    );
-
-    try {
-        await LocalNotifications.cancel({
-            notifications: [{
-                id: 5000 + dayIndex
-            }]
-        });
-    } catch (error) {
-        console.log("5 PM reminder cancel error:", error);
-    }
+async function testNotification(){
+  if(!LocalNotifications){showToast("Notification service unavailable");return}
+  try{
+    let p=await LocalNotifications.checkPermissions();
+    if(p.display!=="granted")p=await LocalNotifications.requestPermissions();
+    if(p.display!=="granted"){showToast("Please allow notifications first");return}
+    await LocalNotifications.schedule({notifications:[{
+      id:9999,title:"Work Attendance",body:"🔔 Notification test successful!",
+      channelId:"attendance-reminders"
+    }]});
+    showToast("Test notification sent ✓");
+  }catch(e){console.error(e);showToast("Could not send test notification")}
 }
 
+document.getElementById("date").value=new Date().toISOString().split("T")[0];
+document.getElementById("salary").value=salarySettings.salary;
+document.getElementById("workingDays").value=salarySettings.workingDays;
 
-// Start reminders when app opens
-setupAttendanceReminders();
-console.log("CAPACITOR:", window.Capacitor);
-console.log("PLUGINS:", window.Capacitor?.Plugins);
+if(localStorage.getItem("darkMode")==="true"){document.body.classList.add("dark");document.getElementById("darkToggle").checked=true}
+displayRecords();updateSummary();
 
+window.addEventListener("load",()=>{
+  setTimeout(()=>document.getElementById("intro").classList.add("hide"),1450);
+  setTimeout(()=>setupAttendanceReminders(false),1600);
+});
 </script>
-
 </body>
 </html>
