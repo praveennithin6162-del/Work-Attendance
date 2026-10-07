@@ -684,9 +684,13 @@ updateSummary();
 /* =========================
    ATTENDANCE REMINDERS
    ========================= */
-
 const LocalNotifications = window.Capacitor?.Plugins?.LocalNotifications;
 
+if (!LocalNotifications) {
+    alert("❌ Local Notifications plugin கிடைக்கவில்லை");
+} else {
+    alert("✅ Local Notifications plugin கிடைத்துவிட்டது");
+}
 async function setupAttendanceReminders() {
     if (!LocalNotifications) {
         console.log("Local Notifications plugin not available");
@@ -819,6 +823,9 @@ async function cancelTodayFivePMReminder() {
 
 // Start reminders when app opens
 setupAttendanceReminders();
+console.log("CAPACITOR:", window.Capacitor);
+console.log("PLUGINS:", window.Capacitor?.Plugins);
+
 </script>
 
 </body>
