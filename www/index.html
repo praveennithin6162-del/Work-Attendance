@@ -375,6 +375,7 @@ function saveAttendance() {
         "attendanceRecords",
         JSON.stringify(records)
     );
+cancelTodayFivePMReminder();
 
     alert("Attendance saved ✅");
 
@@ -680,6 +681,144 @@ if (
 displayRecords();
 updateSummary();
 
+/* =========================
+   ATTENDANCE REMINDERS
+   ========================= */
+
+const LocalNotifications = window.Capacitor?.Plugins?.LocalNotifications;
+
+async function setupAttendanceReminders() {
+    if (!LocalNotifications) {
+        console.log("Local Notifications plugin not available");
+        return;
+    }
+
+    try {
+        // Ask notification permission
+        let permission = await LocalNotifications.checkPermissions();
+
+        if (permission.display !== "granted") {
+            permission = await LocalNotifications.requestPermissions();
+        }
+
+        if (permission.display !== "granted") {
+            console.log("Notification permission not granted");
+            return;
+        }
+
+        // 10:00 AM daily reminder
+        await LocalNotifications.cancel({
+            notifications: [{ id: 1001 }]
+        });
+
+        const tenAM = new Date();
+        tenAM.setHours(10, 0, 0, 0);
+
+        if (tenAM <= new Date()) {
+            tenAM.setDate(tenAM.getDate() + 1);
+        }
+
+        await LocalNotifications.schedule({
+            notifications: [{
+                id: 1001,
+                title: "Work Attendance",
+                body: "⏰ 10 AM — Please mark your attendance.",
+                schedule: {
+                    at: tenAM,
+                    repeats: true,
+                    every: "day",
+                    allowWhileIdle: true
+                }
+            }]
+        });
+
+        // Schedule 5 PM reminders for the next 30 days
+        await scheduleFivePMReminders();
+
+        console.log("Attendance reminders scheduled ✅");
+
+    } catch (error) {
+        console.error("Reminder setup error:", error);
+    }
+}
+
+
+async function scheduleFivePMReminders() {
+    if (!LocalNotifications) return;
+
+    const notifications = [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 30; i++) {
+
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+
+        const dateString =
+            date.getFullYear() + "-" +
+            String(date.getMonth() + 1).padStart(2, "0") + "-" +
+            String(date.getDate()).padStart(2, "0");
+
+        // If attendance already marked, don't schedule 5 PM reminder
+        const alreadyMarked = records.some(
+            record => record.date === dateString
+        );
+
+        if (alreadyMarked) continue;
+
+        const fivePM = new Date(date);
+        fivePM.setHours(17, 0, 0, 0);
+
+        // Don't schedule today's 5 PM if it has already passed
+        if (fivePM <= new Date()) continue;
+
+        notifications.push({
+            id: 5000 + i,
+            title: "Work Attendance",
+            body: "🔔 5 PM — You haven't marked today's attendance.",
+            schedule: {
+                at: fivePM,
+                allowWhileIdle: true
+            }
+        });
+    }
+
+    if (notifications.length > 0) {
+        await LocalNotifications.schedule({
+            notifications: notifications
+        });
+    }
+}
+
+
+// Cancel today's 5 PM reminder
+async function cancelTodayFivePMReminder() {
+    if (!LocalNotifications) return;
+
+    const today = new Date();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const dayIndex = Math.floor(
+        (today - startOfDay) / (1000 * 60 * 60 * 24)
+    );
+
+    try {
+        await LocalNotifications.cancel({
+            notifications: [{
+                id: 5000 + dayIndex
+            }]
+        });
+    } catch (error) {
+        console.log("5 PM reminder cancel error:", error);
+    }
+}
+
+
+// Start reminders when app opens
+setupAttendanceReminders();
 </script>
 
 </body>
